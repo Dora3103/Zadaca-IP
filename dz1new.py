@@ -92,7 +92,7 @@ def an(lex):
 
 # relacija -> MANJE | MANJEJ | VEĆE | VEĆEJ | JJEDNAKO
 # lista -> UOTV elementi UZTV
-# elementi -> aritizraz | aritizraz ZAREZ elementi | '' | lista ZAREZ elementi
+# elementi -> aritizraz ZAREZ elementi | '' | lista ZAREZ elementi
 # numcast -> OOTV NUM OZATV formula
 # logcast -> OOTV LOG OZATV aritizraz
 
@@ -101,7 +101,7 @@ def an(lex):
 # faktor -> baza NA faktor | baza | MINUS faktor
 # baza -> BROJ | IME | OTV aritizraz OZATV | numcast
 
-# formula -> NEG formula | PVAR | OOTV formula binvez formula OZATV | logcast | ISTINA | LAŽ
+# formula -> NEG formula | PVAR | OOTV formula binvez formula OZATV | logcast | ISTINA | LAŽ | NEPOZNATO
 # binvez -> KONJ | DISJ
 #### još ćemo nadodati ako što bude potrebno
 
@@ -179,6 +179,11 @@ class P(Parser):
             while self>=T.ZAREZ and not self>T.UZATV: el.append(self.element())
             self >> T.UZATV
             return Lista(el)
+    
+    def element(self):
+        if self > T.UOTV: return self.lista()
+        else: return self.aritizraz()
+
     def formula(self): pass
     
     def sat(self): 
@@ -206,7 +211,7 @@ class Program(AST('naredbe')):
         except Prekid: raise SemantičkaGreška('nedozvoljen break izvan petlje')
 
 class Lista(AST('elementi')):
-    def vrijednost(self): return [el.vrijednost() for el in self.elementi]
+    def vrijednost(self, mem): return [el.vrijednost(mem) for el in self.elementi]
 
 class Sat(AST('sat dvotočka minute')):
     def vrijednost(self, mem): 
@@ -266,7 +271,7 @@ class Pridruživanje(AST('ime pridruženo')):
 #ulaz = 'P5 = true'
 #print(ulaz)
 
-prog = P('$a = 1:20')
+prog = P('_a = [[5+5], [6], [-4]]')
 prog.izvrši()
 
 #print(x for x in mem_okol)
