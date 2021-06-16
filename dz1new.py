@@ -13,7 +13,7 @@ class T(TipoviTokena):
     ALARM = 'alarm' #naredbe za aktuatore
     ISITHERE, READTEMP =  'isItHere', 'readTemp' #funkcije za očitavanja stanja okoline
     class BROJ(Token): #double
-        def vrijednost(self, _): return double(self.sadržaj)
+        def vrijednost(self, _): return float(self.sadržaj)
         def optim(self): return self
     class IME(Token):
         def vrijednost(self, mem): return mem[self]
@@ -24,8 +24,10 @@ class T(TipoviTokena):
         def optim(self): return self
     class LIME(Token):
         def vrijednost(self,mem): return mem[self]
-    class SIME(Token): pass
-    #class LISTA(Token): pass
+    class SIME(Token): 
+        def vrijednost (self, mem): return mem[self]
+    class BROJS(Token):
+        def vrijednost(self,_): return self.sadržaj[1:-1]
     class KOMENTAR(Token): pass
     class ISTINA(Token):
         literal = 'yes'
@@ -46,42 +48,16 @@ def an(lex):
     for znak in lex:
         if znak.isspace(): lex.zanemari()
         elif znak.isdecimal():
-            if lex >= ':': # sat oblika x:yz , x in range(0,10)
-                if lex.pogledaj() in ['0','1','2','3','4','5']:
-                   lex.čitaj()
-                   if lex.pogledaj().isdecimal():
-                        lex.čitaj()
-                        yield lex.token(T.SAT)
-                   else: lex.vrati()
-                #else: lex.vrati()
-            elif znak in {'1', '2'}: #sat oblika xy:zw, x in {1,2}, if x == 1, y in range(0,10), if x == 2, y in {0,1,2,3}
-                if znak == '1':
-                    if lex.pogledaj().isdecimal():
-                        lex.čitaj()
-                        if lex >= ':': # sat oblika x:yz , x in range(0,10)
-                            if lex.pogledaj() in ['0','1','2','3','4','5']:
-                                lex.čitaj()
-                                if lex.pogledaj().isdecimal(): # in {'0','1','2','3','4','5','6','7','8','9'}:
-                                    lex.čitaj()
-                                    yield lex.token(T.SAT)
-                                else: lex.vrati()
-                        else: lex.vrati()
-                elif znak == '2':
-                    if lex.pogledaj() in ['0', '1', '2', '3']:
-                        lex.čitaj()
-                        if lex >= ':': 
-                            if lex.pogledaj() in ['0','1','2','3','4','5']:
-                                lex.čitaj()
-                                if lex.pogledaj().isdecimal():
-                                    lex.čitaj()
-                                    yield lex.token(T.SAT)
-                                else: lex.vrati()
-                            else: lex.vrati()
-            lex.zvijezda(str.isdecimal)
-            if lex >= '.': 
+            if znak == '0':
+                if lex.pogledaj().isdecimal():
+                    lex.čitaj()
+                    yield lex.token(T.BROJS)
+            else:
                 lex.zvijezda(str.isdecimal)
-                yield lex.token(T.BROJ)
-            else: yield lex.token(T.BROJ)
+                if lex >= '.': 
+                    lex.zvijezda(str.isdecimal)
+                    yield lex.token(T.BROJ)
+                else: yield lex.token(T.BROJ)
         elif znak == 'P': ## logička varijabla
             prvo = lex.čitaj()
             if not prvo.isdecimal():
@@ -97,29 +73,12 @@ def an(lex):
         elif znak.isalpha(): ## numerička varijabla
             lex.zvijezda(str.isalnum)
             yield lex.literal(T.IME, case=False)
-       # elif znak == '[':
-        #    num = 1
-         #   prvoo = lex.čitaj()
-          #  if prvoo.isalnum() or prvoo == '[':
-           #     if prvoo =='[':
-            #        num += 1
-             #   lex.zvijezda(str.isalnum)
-              #  while lex >= ',' or lex >= ' ': lex.zvijezda(str.isalnum)
-            #lex >> ']'
-           # num -=1
-            #if prvoo == 0:
-             #   yield lex.token(T.LISTA)
         elif znak == '#':
             lex.pročitaj_do('#')
             lex.zanemari()
-        #elif znak == '*':
-            #yield lex.token(T.NA if lex >= '*' else T.PUTA)
         elif znak == '=': yield lex.token(T.JJEDNAKO if lex >= '=' else T.JEDNAKO)
         else: yield lex.literal(T)
         
-
-
-
 
 ### BKG:
 # start -> naredba naredbe
@@ -149,10 +108,9 @@ def an(lex):
 # pridruži -> ime JEDANKO tip
 # ime -> IME | LIME | PVAR | SIME
 # tip -> aritizraz | lista | formula | SAT
-# instrukcija -> alarm |
-# funkcija -> readTemp | isItHere
-
-# sat -> BROJ DVOTOČKA BROJ BROJ | BROJ BROJ DVOTOČKA BROJ BROJ
+# instrukcija -> alarm | -- ovo dovrsiti
+# funkcija -> readTemp | isItHere -- ovo dovrsiti
+# sat -> BROJ DVOTOČKA BROJ | BROJ DVOTOČKA BROJS
 
 
 class P(Parser):
@@ -164,7 +122,7 @@ class P(Parser):
         if self > T.IF: return self.grananje()
         elif self > T.FOR: return self.za()
         elif self > T.WHILE: return self.dok()
-        elif self > T.BREAK: return T.PREKID
+        elif self > T.BREAK: return T.BREAK
        # elif self #instrukcija
         else:
             ime = self.ime()
@@ -222,7 +180,15 @@ class P(Parser):
             self >> T.UZATV
             return Lista(el)
     def formula(self): pass
-    def sat(self): pass
+    
+    def sat(self): 
+        h = self >> T.BROJ
+        dvo = self >> T.DVOTOČKA
+        min = self >> {T.BROJ, T.BROJS}
+        return Sat(h, dvo, min)
+    
+    def ime(self):
+        return self >> {T.IME, T.SIME, T.PVAR, T.LIME}
         
     lexer = an
 
@@ -242,31 +208,38 @@ class Program(AST('naredbe')):
 class Lista(AST('elementi')):
     def vrijednost(self): return [el.vrijednost() for el in self.elementi]
 
-class Sat(AST('sat')):
-    def vrijednost(self): pass
+class Sat(AST('sat dvotočka minute')):
+    def vrijednost(self, mem): 
+        if self.sat.vrijednost(mem) >= 0 and self.sat.vrijednost(mem) < 24:
+            if int(self.minute.vrijednost(mem)) >= 0 and int(self.minute.vrijednost(mem)) <= 59:
+                return str(self.sat.vrijednost(mem)) + str(self.dvotočka) + str(self.minute.vrijednost(mem))
+            else:
+                raise SemantičkaGreška('sat nedozvoljenog oblika')
+        else:
+            raise SemantičkaGreška('sat nedozvoljenog oblika')
 
 class Zbroj(AST('pribrojnici')):
-    def vrijednost(self, mem, unutar):
-        return sum(p.vrijednost(mem, unutar) for p in self.pribrojnici)
+    def vrijednost(self, mem):
+        return sum(p.vrijednost(mem) for p in self.pribrojnici)
     
 class Suprotan(AST('od')):
-    def vrijednost(self, mem, unutar): return -self.od.vrijednost(mem, unutar)
+    def vrijednost(self, mem): return -self.od.vrijednost(mem)
     
 class Umnožak(AST('faktori')):
-    def vrijednost(self, mem, unutar):
+    def vrijednost(self, mem):
         p = 1
-        for faktor in self.faktori: p *= faktor.vrijednost(mem, unutar)
+        for faktor in self.faktori: p *= faktor.vrijednost(mem)
         return p
 
 class Potencija(AST('baza eksponent') ):
-    def vrijednost(self, mem, unutar):
-        return baza.vrijednost(mem, unutar) ** eksponent.vrijednost(mem, unutar)
+    def vrijednost(self, mem):
+        return baza.vrijednost(mem) ** eksponent.vrijednost(mem)
 
 
 class Usporedba(AST('lijevo relacija desno')):
-    def vrijednost(self, mem, unutar):
-        l = self.lijevo.vrijednost(mem, unutar)
-        d = self.desno.vrijednost(mem, unutar)
+    def vrijednost(self, mem):
+        l = self.lijevo.vrijednost(mem)
+        d = self.desno.vrijednost(mem)
         if self.relacija ^ T.JJEDNAKO: return l == d
         elif self.relacija ^ T.MANJE: return l < d
         elif self.relacija ^ T.VEĆE: return l > d
@@ -274,6 +247,10 @@ class Usporedba(AST('lijevo relacija desno')):
         elif self.relacija ^ T.VEĆEJ: return l >= d
         elif self.relacija ^ T.RAZLIČITO: return l != d
         else: assert False, f'Nepoznata relacija {self.relacija}'
+
+class Pridruživanje(AST('ime pridruženo')):
+    def izvrši(self, mem):
+        mem[self.ime] = self.pridruženo.vrijednost(mem)
 
         
         
@@ -284,10 +261,13 @@ class Usporedba(AST('lijevo relacija desno')):
 #ulaz = 'if a < 2:825 : naredba'
 #ulaz = 'vlagazraka = 289^91'
 #ulaz = 'a8 = [[4 ,8]]'
-ulaz = '23:69'
+#ulaz = '23:69'
 #ulaz = 'a = 8'
 #ulaz = 'P5 = true'
 #print(ulaz)
 
+prog = P('$a = 1:20')
+prog.izvrši()
+
 #print(x for x in mem_okol)
-P.tokeniziraj(ulaz)
+#P.tokeniziraj(ulaz)
