@@ -1,23 +1,24 @@
 from vepar import *
 
+N = "'"
+
+## break ne radi, while se ne prekida dok treba
 
 class T(TipoviTokena):
-	
-    FOR, IF, IN, RANGE, WHILE, TOČKAZ, DVOTOČKA, OOTV, OZATV, JEDNAKO, RAZLIČITO = 'for', 'if', 'in', 'range', 'while', ';', ':', '(', ')', '=', '!='
+    FOR, IF, IN, RANGE, WHILE, DVOTOČKA, OOTV, OZATV, JEDNAKO, RAZLIČITO = 'for', 'if', 'in', 'range', 'while', ':', '(', ')', '=', '!='
     VOTV, VZATV, MANJE, VEĆE, UOTV, UZATV = '{}<>[]'
     PLUS, MINUS, PUTA, KROZ, NA, ZAREZ = '+-*/^,'
     JJEDNAKO = '=='
-    MANJEJ, VEĆEJ, PLUSP, PLUSJ = '<=', '>=', '++', '+='
+    MANJEJ, VEĆEJ, PLUSP, PLUSJ, MINUSM, MINUSJ = '<=', '>=', '++', '+=', '--', '-='
     NEG, KONJ, DISJ = '!&|'
-    NUM, LOG = 'num', 'log'
+    NUM, LOG, LIST, STR = 'num', 'log', 'list', 'str'
     ALARM = 'alarm' #naredbe za aktuatore
     ISITHERE, READTEMP =  'isItHere', 'readTemp' #funkcije za očitavanja stanja okoline
+    PRINTOUT = 'printout' #ispis
     class BROJ(Token): #double
         def vrijednost(self, _): return float(self.sadržaj)
         def optim(self): return self
     class IME(Token):
-        def vrijednost(self, mem): return mem[self]
-    class SAT(Token):
         def vrijednost(self, mem): return mem[self]
     class PVAR(Token):
         def vrijednost(self, mem): return mem[self]
@@ -26,8 +27,10 @@ class T(TipoviTokena):
         def vrijednost(self,mem): return mem[self]
     class SIME(Token): 
         def vrijednost (self, mem): return mem[self]
-    class BROJS(Token):
-        def vrijednost(self,_): return self.sadržaj[1:-1]
+    class SBROJ(Token):
+        def vrijednost(self, _): return int(self.sadržaj)
+    class MBROJ(Token):
+        def vrijednost(self,_): return self.sadržaj
     class KOMENTAR(Token): pass
     class ISTINA(Token):
         literal = 'yes'
@@ -41,6 +44,13 @@ class T(TipoviTokena):
     class BREAK(Token):
         literal = 'break'
         def izvrši(self, mem): raise Prekid
+    class STRIME(Token):
+        def vrijednost(self,mem): return mem[self]
+    class STRING(Token):
+        def vrijednost(self,_): return self.sadržaj[1:-1]
+    class TOČKAZ(Token):
+        literal = ';'
+        def vrijednost(self,_): return self.sadržaj
     
 
     
@@ -53,16 +63,57 @@ def an(lex):
         elif znak == '+':
             if lex >= '+': yield lex.token(T.PLUSP)
             elif lex >= '=': yield lex.token(T.PLUSJ)
-            else: raise lex.greška('u ovom jeziku nema samostalnog +')
+            else: yield lex.token(T.PLUS)
+           # else: raise lex.greška('u ovom jeziku nema samostalnog +')
         elif znak.isdecimal():
-            if znak == '0':
+            if znak == '1':
                 if lex.pogledaj().isdecimal():
                     lex.čitaj()
-                    yield lex.token(T.BROJS)
+                    if lex.pogledaj() == ':':
+                        yield lex.token(T.SBROJ)
+                    else:
+                        lex.zvijezda(str.isdecimal)
+                        if lex >= '.': 
+                            lex.plus(str.isdecimal)
+                            yield lex.token(T.BROJ)
+                        else: yield lex.token(T.BROJ)
+                else:
+                    lex.zvijezda(str.isdecimal)
+                    if lex >= '.': 
+                        lex.plus(str.isdecimal)
+                        yield lex.token(T.BROJ)
+                    else: yield lex.token(T.BROJ)
+            elif znak == '2':
+                if lex.pogledaj() in ['0', '1', '2', '3']:
+                    lex.čitaj()
+                    if lex.pogledaj() == ':':
+                        yield lex.token(T.SBROJ)
+                    else:
+                        lex.zvijezda(str.isdecimal)
+                        if lex >= '.': 
+                            lex.plus(str.isdecimal)
+                            yield lex.token(T.BROJ)
+                        else: yield lex.token(T.BROJ)
+                else:
+                    lex.zvijezda(str.isdecimal)
+                    if lex >= '.': 
+                        lex.plus(str.isdecimal)
+                        yield lex.token(T.BROJ)
+                    else: yield lex.token(T.BROJ)
+            elif znak == '0':
+                if lex.pogledaj().isdecimal():
+                    lex.čitaj()
+                    yield lex.token(T.MBROJ)
+                else:
+                    lex.zvijezda(str.isdecimal)
+                    if lex >= '.': 
+                        lex.plus(str.isdecimal)
+                        yield lex.token(T.BROJ)
+                    else: yield lex.token(T.BROJ)
             else:
                 lex.zvijezda(str.isdecimal)
                 if lex >= '.': 
-                    lex.zvijezda(str.isdecimal)
+                    lex.plus(str.isdecimal)
                     yield lex.token(T.BROJ)
                 else: yield lex.token(T.BROJ)
         elif znak == 'P': ## logička varijabla
@@ -77,6 +128,12 @@ def an(lex):
         elif znak == '$': ## ime varijable za sat
             lex.zvijezda(str.isalnum)
             yield lex.token(T.SIME)
+        elif znak == '~':
+            lex.zvijezda(str.isalnum)
+            yield lex.token(T.STRIME)
+        elif znak == N:
+            lex.pročitaj_do(N)
+            yield lex.token(T.STRING)
         elif znak.isalpha(): ## numerička varijabla
             lex.zvijezda(str.isalnum)
             yield lex.literal(T.IME, case=False)
@@ -90,36 +147,50 @@ def an(lex):
 ### BKG:
 # start -> naredba naredbe
 # naredbe -> '' | naredba naredbe
-# naredba -> petlja | if | BREAK TOČKAZAREZ | pridruži | instrukcija
+# naredba -> petlja | if | BREAK TOČKAZAREZ | pridruži | instrukcija | IME PLUSP
 # petlja -> while naredba | for naredba | while VOTV naredbe VZATV | for VOTV naredbe VZATV
 # for -> FOR OOTV IME# JEDNAKO BROJ TOČKAZ IME# MANJE BROJ TOČKAZ IME# inkrement OZATV
 # inkrement -> PLUSP | PLUSJ BROJ
 # grananje -> if naredba | if VOTV naredbe VZATV
 # if -> IF OOTV uvjet OZATV
 # while -> WHILE OOTV uvjet OZATV
+
 # uvjet -> formula | OOTV aritizraz OZATV relacija OOTV aritizraz OZATV | sat relacija sat | IME relacija aritizraz
 
-# relacija -> MANJE | MANJEJ | VEĆE | VEĆEJ | JJEDNAKO
-# lista -> UOTV elementi UZTV
-# elementi -> aritizraz ZAREZ elementi | '' | lista ZAREZ elementi
-# numcast -> OOTV NUM OZATV formula
-# logcast -> OOTV LOG OZATV aritizraz
+# pridruži -> IME JEDNAKO aritizraz | LIME JEDNAKO lista | PVAR JEDNAKO logizraz | SIME JEDNAKO sat | STRIME JEDNAKO string
 
-# aritizraz -> aritizraz PLUS član | aritizraz MINUS član | član
+## tipovi podataka
+# aritizraz -> aritizraz PLUS član | aritizraz MINUS član | član 
 # član -> član PUTA faktor | član KROZ faktor | faktor
 # faktor -> baza NA faktor | baza | MINUS faktor
-# baza -> BROJ | IME | OTV aritizraz OZATV | numcast
+# baza -> BROJ | IME | OOTV aritizraz OZATV | numcast
 
-# formula -> NEG formula | PVAR | OOTV formula binvez formula OZATV | logcast | ISTINA | LAŽ | NEPOZNATO
-# binvez -> KONJ | DISJ
-#### još ćemo nadodati ako što bude potrebno
+# logizraz -> logizraz DISJ logčlan | logčlan
+# logčlan -> logčlan KONJ logfaktor | logfaktor
+# logfaktor -> NEG logfaktor | PVAR | ISTINA | LAŽ | NEPOZNATO | aritizraz relacija aritizraz | sat relacija sat | logcast | string relacija string
 
-# pridruži -> ime JEDANKO tip
-# ime -> IME | LIME | PVAR | SIME
-# tip -> aritizraz | lista | formula | SAT
+# relacija -> MANJE | MANJEJ | VEĆE | VEĆEJ | JJEDNAKO | RAZLIČITO
+
+# string -> STRIME | STRING | stringcast
+
+# sat -> sbroj DVOTOČKA BROJ | sbroj DVOTOČKA MBROJ | SIME
+# sbroj -> SBROJ | MBROJ
+
+# lista -> UOTV elementi UZTV | listcast
+# elementi -> aritizraz ZAREZ elementi | '' | lista ZAREZ elementi | STRING ZAREZ elementi | sat ZAREZ elementi
+
+##castanje
+# numcast -> OOTV NUM OZATV izraz
+# logcast -> OOTV LOG OZATV  izraz
+# listcast -> OOTV LIST OZATV izraz 
+# strcast -> OOTV STR OZATV izraz 
+# izraz -> aritizraz | logizraz | sat | string
+
+##funkcije i naredbe
+# ispis -> PRINTOUT OOTV printizraz TOČKAZ printizraz OZATV
+# printizraz -> lista | logizraz | '' | sat | string
 # instrukcija -> alarm | -- ovo dovrsiti
 # funkcija -> readTemp | isItHere -- ovo dovrsiti
-# sat -> BROJ DVOTOČKA BROJ | BROJ DVOTOČKA BROJS
 
 
 class P(Parser):
@@ -132,13 +203,19 @@ class P(Parser):
         if self > T.IF: return self.grananje()
         elif self > T.FOR: return self.za()
         elif self > T.WHILE: return self.dok()
-        elif ime := self > {T.IME, T.LIME, T.SIME}:
-            self >> T.JEDNAKO
-            return Pridruživanje(ime, self.tip(ime)) #ast
+        elif self > T.BREAK: return T.BREAK
+        elif self > T.PRINTOUT: return self.ispis()
+        elif self > {T.IME, T.LIME, T.SIME, T.STRIME}:
+            ime = self >> {T.IME, T.LIME, T.SIME, T.STRIME}
+            if self >= T.PLUSP: return PPlus(ime)
+            elif self >= T.PLUSJ: return PlusJ(ime, self.aritizraz()) #ast
+            elif self >= T.MINUSM: return MMinus(ime) #ast
+            elif self >= T.MINUSJ: return MinusJ(ime, self.aritizraz()) #ast
+            else:
+                self >> T.JEDNAKO
+                return Pridruživanje(ime, self.tip(ime)) 
         # elif self #instrukcija
-        elif br := self >> T.BREAK:
-            self >> T.TOČKAZ
-            return br
+    
             
     def za(self):
         kriva_varijabla = SemantičkaGreška('Sva tri dijela for-petlje moraju imati istu varijablu.')
@@ -166,7 +243,8 @@ class P(Parser):
         
     def dok(self):
         self >> T.WHILE, self >> T.OOTV
-        uvjet = self.uvjet()
+        #uvjet = self.uvjet()
+        uvjet = self.logizraz()
         self >> T.OZATV
         
         if self >= T.VOTV:
@@ -177,7 +255,8 @@ class P(Parser):
         
     def grananje(self):
         self >> T.IF, self >> T.OOTV
-        uvjet = self.uvjet()
+        #uvjet = self.uvjet()
+        uvjet = self.logizraz()
         self >> T.OZATV
         
         if self >= T.VOTV:
@@ -216,9 +295,13 @@ class P(Parser):
     def tip(self, ime):
         if ime ^ T.IME: return self.aritizraz()
         elif ime ^ T.LIME: return self.lista()
-        elif ime ^ T.PVAR: return self.formula()
+        elif ime ^ T.PVAR: return self.logizraz()
         elif ime ^ T.SIME: return self.sat()
+        elif ime ^ T.STRIME: return self.string()
         else: assert False, f'Nepoznat tip od {ime}'
+
+    def relacija(self):
+        return self >> {T.MANJEJ, T.MANJE, T.VEĆE, T.VEĆEJ, T.JJEDNAKO, T.RAZLIČITO}
 
     def aritizraz(self):
         članovi = [self.član()]
@@ -231,53 +314,120 @@ class P(Parser):
         faktori = [self.faktor()]
         while True:
             if self >= T.PUTA: faktori.append(self.faktor())
-            elif self >= T.KROZ: članovi.append(Recipročan(self.faktor())) #ast
+            elif self >= T.KROZ: faktori.append(Recipročan(self.faktor())) #ast
             else: return Umnožak.ili_samo(faktori)
             
     def faktor(self):
-        if op := self >= T.MINUS: return Suprotan(self.faktor())
+        if self >= T.MINUS: return Suprotan(self.faktor())
         baza = self.baza()
-        if op := self >= T.NA: return Potencija(op, baza, self.faktor()) #ast
+        if self >= T.NA: return Potencija(baza, self.faktor())
         else: return baza
     
     def baza(self): #dodaj numcast
         if self >= T.OOTV:
             if self >= T.NUM:
-                trenutni = self.numcast()
+                trenutni = self.cast()
             else:
                 trenutni = self.aritizraz()
                 self >> T.OZATV
         else: trenutni = self >> {T.BROJ, T.IME}
         return trenutni
     
-    def numcast(self): 
-        self >> T.OZATV
-        #return vrijednost formula
+    def logizraz(self):
+        članovi = [self.logčlan()]
+        while True:
+            if self >= T.DISJ: članovi.append(self.logčlan())
+            else: return Disjunkcija.ili_samo(članovi) #ast
 
-    def logcast(self): pass
+    def logčlan(self):
+        faktori = [self.logfaktor()]
+        while True:
+            if self >= T.KONJ: faktori.append(self.logfaktor())
+            else: return Konjunkcija.ili_samo(faktori) #ast
+
+    def logfaktor(self):
+        if self >= T.NEG: return Negacija(self.logfaktor())
+        elif self > {T.ISTINA, T.NEPOZNATO, T.LAŽ, T.PVAR}: 
+            return self >> {T.ISTINA, T.NEPOZNATO, T.LAŽ, T.PVAR}
+        elif self > {T.SBROJ, T.MBROJ, T.SIME}: return Usporedba(self.sat(), self.relacija(), self.sat())
+        elif self >= T.OOTV: #arit izraz, možda promeniti zagrade
+            if self > T.LOG:
+                return self.cast()
+        elif self > {T.STRIME, T.STRING}: return Usporedba(self.string(), self.relacija(), self.string())
+        else: return Usporedba(self.aritizraz(), self.relacija(), self.aritizraz())
+
+    def cast(self):
+        tip = self >> {T.NUM, T.LOG, T.LIST, T.STR}
+        self >> T.OZATV
+        return Cast(tip, self.izraz())
+
+    def izraz(self):
+        if self > {T.BROJ, T.MINUS, T.IME, T.OOTV}: return self.aritizraz()
+        elif self > {T.SIME, T.SBROJ}: return self.sat()
+        elif self > {T.STRIME, T.STRING}: return self.string()
+        elif self > {T.LIME, T.UOTV}: return self.lista()
+        else: return self.logizraz()
 
     def lista(self):
-        if self >= T.UOTV:
-            if self >= T.UZATV: return Lista([])
+        if self > T.LIME: return self >> T.LIME
+        if self >= T.OOTV:
+            if self > T.LIST:
+                return self.cast()
+        elif self >= T.UOTV:
+            if self >= T.UZATV: 
+                return Lista([])
             el = [self.element()]
-            while self>=T.ZAREZ and not self>T.UZATV: el.append(self.element())
+            while self >= T.ZAREZ and not self>T.UZATV: el.append(self.element())
             self >> T.UZATV
             return Lista(el)
     
     def element(self):
         if self > T.UOTV: return self.lista()
+        elif self > T.STRING: return self.string()
+        elif self > T.SBROJ: return self.sat()
         else: return self.aritizraz()
 
-    def formula(self): pass
     
     def sat(self): 
-        h = self >> T.BROJ
-        dvo = self >> T.DVOTOČKA
-        min = self >> {T.BROJ, T.BROJS}
-        return Sat(h, dvo, min)
+        if self > T.SIME: 
+            sat = self >> T.SIME
+            if self > {T.MANJE, T.MANJEJ, T.JJEDNAKO, T.RAZLIČITO, T.VEĆEJ, T.VEĆE}:
+                return Usporedba(sat, self.relacija(), self.sat())
+            else: return sat
+        h = self >> {T.SBROJ, T.MBROJ}
+        self >> T.DVOTOČKA
+        min = self >> {T.BROJ, T.MBROJ}
+
+        if self > {T.MANJE}:
+            return Usporedba(Sat(h,min), self.relacija(), self.sat())
+        else: return Sat(h, min)
+    
+    def string(self):
+        if self >= T.OOTV:
+            if self > T.STR:
+                return self.cast()
+        else: return self >> {T.STRING, T.STRIME}
     
     def ime(self):
-        return self >> {T.IME, T.SIME, T.PVAR, T.LIME}
+        return self >> {T.IME, T.SIME, T.PVAR, T.LIME, T.STRIME}
+    
+    def ispis(self):
+        if self >= T.PRINTOUT:
+            self >> T.OOTV
+            izrazi = [self.printizraz()]
+            while not self > T.OZATV: izrazi.append(self.printizraz())
+            self >> T.OZATV
+            return Ispis(izrazi)
+    
+    def printizraz(self): #dodati aritizraz
+        if self > T.UOTV: return self.lista()
+        elif self > {T.SIME, T.SBROJ, T.MBROJ}: 
+            return self.sat()
+        elif self >= T.OOTV:
+            if self > {T.STR, T.NUM, T.LOG, T.LIST}:
+                return self.cast()
+        elif self > {T.STRING, T.STRIME, T.LIME, T.TOČKAZ, T.IME}: return self >> {T.STRING, T.STRIME, T.LIME, T.TOČKAZ, T.IME}
+        else: return self.logizraz()
         
     lexer = an
 
@@ -295,34 +445,66 @@ class Program(AST('naredbe')):
         except Prekid: raise SemantičkaGreška('nedozvoljen break izvan petlje')
 
 class Lista(AST('elementi')):
-    def izvrši(self, mem): return [el.vrijednost(mem) for el in self.elementi]
+    def vrijednost(self, mem): return [el.vrijednost(mem) for el in self.elementi]
 
-class Sat(AST('sat dvotočka minute')):
-    def izvrši(self, mem): 
-        if self.sat.vrijednost(mem) >= 0 and self.sat.vrijednost(mem) < 24:
-            if int(self.minute.vrijednost(mem)) >= 0 and int(self.minute.vrijednost(mem)) <= 59:
-                return str(self.sat.vrijednost(mem)) + str(self.dvotočka) + str(self.minute.vrijednost(mem))
+class Sat(AST('sat minute')):
+    def vrijednost(self, mem): 
+        if str(self.sat.vrijednost(mem)) >= '00' and str(self.sat.vrijednost(mem)) < '24':
+            if str(self.minute.vrijednost(mem)) >= '00' and str(self.minute.vrijednost(mem)) <= '09':
+                return str(self.sat.vrijednost(mem)) + ':' + str(self.minute.vrijednost(mem))
+            elif int(self.minute.vrijednost(mem)) >= 10 and int(self.minute.vrijednost(mem)) <= 59:
+                return str(self.sat.vrijednost(mem)) + ':' + str(int(self.minute.vrijednost(mem))) 
             else:
                 raise SemantičkaGreška('sat nedozvoljenog oblika')
         else:
             raise SemantičkaGreška('sat nedozvoljenog oblika')
 
 class Zbroj(AST('pribrojnici')):
-    def izvrši(self, mem):
+    def vrijednost(self, mem):
         return sum(p.vrijednost(mem) for p in self.pribrojnici)
     
 class Suprotan(AST('od')):
-    def izvrši(self, mem): return -self.od.vrijednost(mem)
+    def vrijednost(self, mem): return -self.od.vrijednost(mem)
     
 class Umnožak(AST('faktori')):
-    def izvrši(self, mem):
+    def vrijednost(self, mem):
         p = 1
         for faktor in self.faktori: p *= faktor.vrijednost(mem)
         return p
 
+class Recipročan(AST('od')):
+    def vrijednost(self,mem): return 1/(self.od.vrijednost(mem))
+
+class PPlus(AST('pribrojnik')):
+    def izvrši(self,mem): mem[self.pribrojnik] = self.pribrojnik.vrijednost(mem) + 1
+
 class Potencija(AST('baza eksponent') ):
-    def izvrši(self, mem):
-        return baza.vrijednost(mem) ** eksponent.vrijednost(mem)
+    def vrijednost(self, mem):
+        return self.baza.vrijednost(mem) ** self.eksponent.vrijednost(mem)
+
+class Konjunkcija(AST('konjunkti')):
+    def vrijednost(self,mem):
+        k = True
+        for varijabla in self.konjunkti: k = k and varijabla.vrijednost(mem)
+        return k
+
+class Disjunkcija(AST('disjunkti')):
+    def vrijednost(self,mem):
+        d = False
+        for varijabla in self.disjunkti: d = d or varijabla.vrijednost(mem)
+        return d
+
+class Negacija(AST('formula')):
+    def vrijednost(self, mem): return not self.formula.vrijednost(mem)
+
+class Cast(AST('tip izraz')):
+    def vrijednost(self,mem):
+        izraz = self.izraz.vrijednost(mem)
+        if self.tip ^ T.NUM: 
+            return float(izraz) #popraviti za stringove i sat
+        elif self.tip ^ T.LOG: return bool(izraz) #popraviti za sat
+        elif self. tip ^ T.LIST: return [izraz]
+        elif self.tip ^ T.STR: return str(izraz)
 
         
 class Petlja1(AST('varijabla početak granica inkrement blok')):
@@ -340,7 +522,7 @@ class Petlja1(AST('varijabla početak granica inkrement blok')):
    
 class Petlja2(AST('uvjet blok')):
     def izvrši(self, mem):
-        kv = self.uvjet
+        kv = self.uvjet.vrijednost
         while kv:
             try:
                 for naredba in self.blok: naredba.izvrši(mem)
@@ -378,9 +560,36 @@ class Uvjet(AST('lijevo desno relacija')):
             else: return T.ISTINA
         else: assert False, 'nepokriveni slučaj'
 
+class Usporedba(AST('lijevo relacija desno')):
+    def vrijednost(self, mem):
+        l = self.lijevo.vrijednost(mem)
+        d = self.desno.vrijednost(mem)
+        if self.relacija ^ T.JJEDNAKO: return l == d
+        elif self.relacija ^ T.MANJE: return l < d
+        elif self.relacija ^ T.VEĆE: return l > d
+        elif self.relacija ^ T.MANJEJ: return l <= d
+        elif self.relacija ^ T.VEĆEJ: return l >= d
+        elif self.relacija ^ T.RAZLIČITO: return l != d
+        else: assert False, f'Nepoznata relacija {self.relacija}'
+
 class Pridruživanje(AST('ime pridruženo')):
     def izvrši(self, mem):
-        mem[self.ime] = self.pridruženo.vrijednost(mem)      
+        mem[self.ime] = self.pridruženo.vrijednost(mem) 
+
+class Ispis(AST('izrazi')):
+    def izvrši(self, mem):
+        for izraz in self.izrazi: 
+            if izraz.vrijednost(mem) == ';':
+               print(' ', end='')
+            elif izraz.vrijednost(mem) is True:
+               print('yes', end='')
+            elif izraz.vrijednost(mem) is False:
+                print('no', end='')
+            elif izraz.vrijednost(mem) is None:
+                print('unknown', end='')
+            else:
+                print(izraz.vrijednost(mem), end='')
+        print()    
         
 #ulaz = '#asdasd#'
 #ulaz = '!(P5&!!(P6 | P9))'
@@ -403,11 +612,26 @@ class Pridruživanje(AST('ime pridruženo')):
 #prog = P(''' while(51 < 50){
 #                break;} ''')
 
-prog = P(''' if( 50 != 50 ){
-                for(ir = 1; ir < 20; ir++){
-                    break;
-                    }} ''')
-prikaz(prog)
-prog.izvrši()
+#prog = P(''' if( 50 == 50 ){
+ #               for(ir = 1; ir < 20; ir++){
+  #                  #printout(ir)#
+   #                 break;
+    #                }
+     #               } ''')
+#ulaz = '''a = 5+5 printout(a)'''
+ulaz = '''for(i = 0; i < 15; i++){
+    j = i
+    printout(i; j)
+    while(11 < 10){
+        i++
+        printout(i; j)
+    }
+} '''
+#prog1 = P ('''a = 5+5 printout(a)''')
+#prikaz(prog)
+#prog1.izvrši()
+ulaz2 = "$s = 15:00 ~str = 'program' printout((list)$s; ~str)"
+prog2 = P(ulaz2)
+prog2.izvrši()
 #print(x for x in mem_okol)
 #P.tokeniziraj(ulaz)
