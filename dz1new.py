@@ -151,8 +151,7 @@ def an(lex):
 # petlja -> while naredba | for naredba | while VOTV naredbe VZATV | for VOTV naredbe VZATV
 # for -> FOR OOTV IME# JEDNAKO BROJ TOČKAZ IME# MANJE BROJ TOČKAZ IME# inkrement OZATV
 # inkrement -> PLUSP | PLUSJ BROJ
-# grananje -> if naredba | if VOTV naredbe VZATV
-# if -> IF OOTV uvjet OZATV
+# if -> IF OOTV uvjet OZATV VOTV naredbe VZATV
 # while -> WHILE OOTV uvjet OZATV
 
 # uvjet -> formula | OOTV aritizraz OZATV relacija OOTV aritizraz OZATV | sat relacija sat | IME relacija aritizraz
@@ -522,7 +521,7 @@ class Petlja1(AST('varijabla početak granica inkrement blok')):
    
 class Petlja2(AST('uvjet blok')):
     def izvrši(self, mem):
-        kv = self.uvjet.vrijednost
+        kv = self.uvjet.vrijednost(mem)
         while kv:
             try:
                 for naredba in self.blok: naredba.izvrši(mem)
@@ -530,8 +529,8 @@ class Petlja2(AST('uvjet blok')):
             
 class Grananje(AST('uvjet blok')):
     def izvrši(self, mem):
-        print(self.uvjet)       # stavila samo za provjeru - zašto nije oblika T.ISTINA/T.LAŽ?
-        if self.uvjet:
+        #print(self.uvjet.vrijednost(mem))       # stavila samo za provjeru - zašto nije oblika T.ISTINA/T.LAŽ?
+        if self.uvjet.vrijednost(mem):
             for naredba in self.blok: naredba.izvrši(mem)
             
         
@@ -630,8 +629,9 @@ ulaz = '''for(i = 0; i < 15; i++){
 #prog1 = P ('''a = 5+5 printout(a)''')
 #prikaz(prog)
 #prog1.izvrši()
-ulaz2 = "$s = 15:00 ~str = 'program' printout((list)$s; ~str)"
-prog2 = P(ulaz2)
+#ulaz2 = "$s = 15:00 ~str = 'program' printout((list)$s; ~str)"
+ulaz3 = "a = 5 b = 7.5 if(a+1 > b-1){ a = a + b } printout(a)"
+prog2 = P(ulaz3)
 prog2.izvrši()
 #print(x for x in mem_okol)
 #P.tokeniziraj(ulaz)
