@@ -2,7 +2,7 @@ from vepar import *
 
 N = "'"
 
-## break ne radi, while se ne prekida dok treba
+## while se ne prekida dok treba
 
 class T(TipoviTokena):
     FOR, IF, IN, RANGE, WHILE, DVOTOČKA, OOTV, OZATV, JEDNAKO, RAZLIČITO = 'for', 'if', 'in', 'range', 'while', ':', '(', ')', '=', '!='
@@ -15,6 +15,7 @@ class T(TipoviTokena):
     ALARM = 'alarm' #naredbe za aktuatore
     ISITHERE, READTEMP =  'isItHere', 'readTemp' #funkcije za očitavanja stanja okoline
     PRINTOUT = 'printout' #ispis
+    CURRENTTIME = 'currentTime()'
     class BROJ(Token): #double
         def vrijednost(self, _): return float(self.sadržaj)
         def optim(self): return self
@@ -34,13 +35,13 @@ class T(TipoviTokena):
     class KOMENTAR(Token): pass
     class ISTINA(Token):
         literal = 'yes'
-        def vrijednost(self): return True
+        def vrijednost(self,_): return True
     class LAŽ(Token):
         literal = 'no'
-        def vrijednost(self): return False
-    class NEPOZNATO(Token):
+        def vrijednost(self,_): return False
+    class NEPOZNATO(Token,):
         literal = 'unknown'
-        def vrijednost(self): return None
+        def vrijednost(self,_): return None
     class BREAK(Token):
         literal = 'break'
         def izvrši(self, mem): raise Prekid
@@ -202,7 +203,9 @@ class P(Parser):
         if self > T.IF: return self.grananje()
         elif self > T.FOR: return self.za()
         elif self > T.WHILE: return self.dok()
-        elif self > T.BREAK: return T.BREAK
+        elif br := self >= T.BREAK:
+            self >> T.TOČKAZ
+            return br
         elif self > T.PRINTOUT: return self.ispis()
         elif self > {T.IME, T.LIME, T.SIME, T.STRIME}:
             ime = self >> {T.IME, T.LIME, T.SIME, T.STRIME}
@@ -631,7 +634,17 @@ ulaz = '''for(i = 0; i < 15; i++){
 #prog1.izvrši()
 #ulaz2 = "$s = 15:00 ~str = 'program' printout((list)$s; ~str)"
 ulaz3 = "a = 5 b = 7.5 if(a+1 > b-1){ a = a + b } printout(a)"
-prog2 = P(ulaz3)
+ulaz4 = '''i = 0
+            while(yes){
+                if( i > 5 ){
+                    break;
+                }
+                i++
+            }
+            printout(i)
+'''
+prog2 = P(ulaz4)
+#prikaz(prog2)
 prog2.izvrši()
 #print(x for x in mem_okol)
 #P.tokeniziraj(ulaz)
