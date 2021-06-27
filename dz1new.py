@@ -179,10 +179,8 @@ def an(lex):
 # petlja -> while naredba | for naredba | while VOTV naredbe VZATV | for VOTV naredbe VZATV
 # for -> FOR OOTV IME# JEDNAKO BROJ TOČKAZ IME# MANJE BROJ TOČKAZ IME# inkrement OZATV
 # inkrement -> PLUSP | PLUSJ BROJ
-# if -> IF OOTV uvjet OZATV VOTV naredbe VZATV
-# while -> WHILE OOTV uvjet OZATV
-
-# uvjet -> formula | OOTV aritizraz OZATV relacija OOTV aritizraz OZATV | sat relacija sat | IME relacija aritizraz
+# if -> IF OOTV logizraz OZATV VOTV naredbe VZATV
+# while -> WHILE OOTV logizraz OZATV
 
 # pridruži -> IME JEDNAKO aritizraz | LIME JEDNAKO liste | PVAR JEDNAKO logizraz | SIME JEDNAKO sat | STRIME JEDNAKO string | LIME UOTV index UZATV izraz
 
