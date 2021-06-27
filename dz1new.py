@@ -818,6 +818,9 @@ class DogSearch(AST('pas')):
             if tpas==a[0]:
                 print('Vec trazim tog psa!')
                 return
+        if tpas not in okolina:
+            print('Psa',tpas,'nemam zapisano')
+            return
         if okolina[tpas]:
             print('Taj pas je prisutan')
             return
@@ -832,6 +835,9 @@ class Feed(AST('pas')):
             if hpas==a[0]:
                 print('Vec hranim tog psa!')
                 return
+        if hpas not in glad:
+            print('Psa',hpas,'nemam zapisano')
+            return
         if not glad[hpas]: 
             print('Taj pas nije gladan!')
             return
@@ -867,7 +873,7 @@ class StopFeed(AST('pas')):
 
 class Refresh(AST('')): #ova funkcija je simulacija osvjezavanja senzora, prava funkcija bi jako ovisila o samom hardveru, i nebi radila ove izracune
     def izvrši(self,mem):
-        global okolina, glad, trazim, hranim, temperatura
+        global okolina, glad, trazim, hranim, temperatura, zadnja_provjera
         vrijeme=datetime.now().timestamp()
         i=-1
         for a in trazim:
@@ -884,6 +890,8 @@ class Refresh(AST('')): #ova funkcija je simulacija osvjezavanja senzora, prava 
                 glad[a[0]]=False
                 hranim.pop(i)
         temperatura+=(vrijeme-zadnja_provjera)*klima
+        zadnja_provjera=vrijeme
+
 
 
 
@@ -949,37 +957,38 @@ ulaz7 = '''_dog = ['Fifi', 'Rex', 'Kokos']
             }
 '''
 ulaz9 = "printout((num)'15.2')"
-ulaz10 = '''printout(readTemp)
+ulaz10 = '''printout(readTemp) #citam temperaturu, postavim klimu na +0.01, čekam 4 sekunde, pokrecem senzore, citam ponovo - mora biti promijene# 
     condChn(0.01)
     alarm(4)
     refresh
     printout(readTemp)
-    dogSearch('Fifi')
-    feed('Kokos')
-    feed('Fifi')
-    stopFeed('Fifi')
-    feed('Fifi')
-    alarm(6)
-    refresh
+    dogSearch('Fifi') #trazim fifi, ali je tu#
+    feed('Kokos') #hranim kokos, ali je sit#
+    feed('Fifi') #hranim fifi#
+    stopFeed('Fifi') #prestajem hraniti fifi#
+    feed('Rex') #taj pas ne postoji#
+    feed('Fifi') #opet hranim fifi#
+    alarm(6) #čekam 6 sekundi#
+    refresh #fifi je sada sita#
     printout(isHungry('Fifi'))
 '''
 qsis='''
 _A = [39,17,89,67,10,39,45,67,50,65,58,9,66,51,6,16,94,68,75,94,74,33,58,61,40,76,3,6,37,8,64,98]
 l = 0
 h = length(_A) - 1
-_stack = _A #radi li?, zapravo mi je samo bitno da mi je stack velik ko i lista#
-top = 0
+_stack = _A #inicijaliziramo stack#
+top = 0 #na stack ce ici pocetak i kraj nizova koje zelimo sortirat u iducoj iteraciji#
 _stack[%top] = l
 top++
 _stack[%top] = h
 while(top >= 0) {
-        h = _stack[%top]
+        h = _stack[%top] #vucemo sa stacka jednu listu za sortiranje#
         top--
         l = _stack[%top]
 
         x = _A[%h]
-        i = l-1
-        for (j = l; j <= h-1; j++) {
+        i = l-1 
+        for (j = l; j <= h-1; j++) { #radimo jednu iteraciju quicksorta#
                 if (_A[%j] <= x) {
                         i++
                         temp = _A[%i]
@@ -994,14 +1003,14 @@ while(top >= 0) {
 
         #i je pivot#
 
-        if ((i-1 > l) & (i-1-l>6)) { #lijevo od pivota#
+        if ((i-1 > l) & (i-1-l>6)) { #lijevo od pivota cine novu listu za sort#
                 top++
                 _stack[%top] = l
                 top++
                 _stack[%top] = i-1
         }
 
-        if ((i-1 > l) & (i-1-l<=6)) {
+        if ((i-1 > l) & (i-1-l<=6)) { #ako je manja od 6 elemenata insertion sortaj ju#
                 start = l
                 end = i-1
                 for (x = start + 1; x < end; x++) {
@@ -1015,14 +1024,14 @@ while(top >= 0) {
                 }
         }
 
-        if ((i+1 < h) & (h-i-1>6)) { #desno od pivota#
+        if ((i+1 < h) & (h-i-1>6)) { #desno od pivota cine novu listu za sort#
                 top++
                 _stack[%top] = i + 1
                 top++
                 _stack[%top] = h
         }
 
-        if ((i-1 > l) & (i-1-l<=6)) {
+        if ((i-1 > l) & (i-1-l<=6)) { #ako je manja od 6 elemenata insertion sortaj ju#
                 start = i+1
                 end = h
                 for (x = start + 1; x < end; x++) {
