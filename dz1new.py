@@ -175,14 +175,14 @@ def an(lex):
 ### BKG:
 # start -> naredba naredbe
 # naredbe -> '' | naredba naredbe
-# naredba -> petlja | if | BREAK TOČKAZAREZ | pridruži | condChn  | dogSearch | feed | stopSearch | stopFeed | refresh | ispis | IME PLUSP | funkcija | alarm | pas | index !!!
+# naredba -> petlja | if | BREAK TOČKAZAREZ | pridruži | condChn  | dogSearch | feed | stopSearch | stopFeed | refresh | ispis | alarm | IME inkr/dekr
 # petlja -> while naredba | for naredba | while VOTV naredbe VZATV | for VOTV naredbe VZATV
-# for -> FOR OOTV IME# JEDNAKO BROJ TOČKAZ IME# MANJE BROJ TOČKAZ IME# inkrement OZATV
-# inkrement -> PLUSP | PLUSJ BROJ
+# for -> FOR OOTV pridruži TOĆKAZ logizraz TOČKAZ IME inkr/dekr
+# inkr/dekr -> PLUSP | PLUSJ aritizraz | MINUSM | MINUSJ arititraz | PUTAJ aritizraz | KROZJ aritizraz 
 # if -> IF OOTV logizraz OZATV VOTV naredbe VZATV
 # while -> WHILE OOTV logizraz OZATV
 
-# pridruži -> IME JEDNAKO aritizraz | LIME JEDNAKO liste | PVAR JEDNAKO logizraz | SIME JEDNAKO sat | STRIME JEDNAKO string | LIME UOTV index UZATV izraz
+# pridruži -> IME JEDNAKO aritizraz | LIME JEDNAKO liste | PVAR JEDNAKO logizraz | SIME JEDNAKO sat | STRIME JEDNAKO string | LIME UOTV index UZATV izraz | 
 
 ## tipovi podataka
 # aritizraz -> aritizraz PLUS član | aritizraz MINUS član | član 
@@ -224,7 +224,7 @@ def an(lex):
 # funkcija -> readtemp | isithere | ishungry
 # readtemp -> READTEMP
 # isithere -> isItHere OOTV pas OZATV
-# isHungry -> isHungry OOTV pas OZATV
+# ishungry -> isHungry OOTV pas OZATV
 # alarm -> ALARM OOTV aritizraz OZATV
 # pas -> string | PAS UOTV index UZATV
 # index -> INDEX | MOD IME
@@ -328,7 +328,6 @@ class P(Parser):
     def grananje(self): #if
         self >> T.IF, self >> T.OOTV
         uvjet = self.logizraz()
-        #print(uvjet)
         self >> T.OZATV
         
         if self >= T.VOTV:
@@ -498,8 +497,6 @@ class P(Parser):
             ind = self.index()
             self >> T.UZATV 
             trenutni = Index(lista, ind)
-            #print(trenutni)
-            #if not trenutni is float: raise SintaksnaGreška('Baza smije biti samo broj')
         else: 
             trenutni = self >> {T.BROJ, T.IME}
             self.tokena_parsirano += 1
