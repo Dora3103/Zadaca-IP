@@ -215,16 +215,16 @@ def an(lex):
 ##funkcije i naredbe
 # ispis -> PRINTOUT OOTV printizraz TOČKAZ printizraz OZATV
 # printizraz -> lista | logizraz | '' | sat | string | aritizraz 
-# condChn -> condChn OOTV aritizraz OZATV
-# dogSearch -> dogSearch OOTV pas OZATV
-# feed -> feed OOTV pas OZATV
-# stopSearch -> stopSearch OOTV pas OZATV
-# stopFeed -> stopFeed OOTV pas OZATV
-# refresh -> refresh
+# condChn -> CONDCHN OOTV aritizraz OZATV
+# dogSearch -> DOGSEARCH OOTV pas OZATV
+# feed -> FEED OOTV pas OZATV
+# stopSearch -> STOPSEARCH OOTV pas OZATV
+# stopFeed -> STOPFEED OOTV pas OZATV
+# refresh -> REFRESH
 # funkcija -> readtemp | isithere | ishungry
 # readtemp -> READTEMP
-# isithere -> isItHere OOTV pas OZATV
-# ishungry -> isHungry OOTV pas OZATV
+# isithere -> ISITHERE OOTV pas OZATV
+# ishungry -> ISHUNGRY OOTV pas OZATV
 # alarm -> ALARM OOTV aritizraz OZATV
 # pas -> string | PAS UOTV index UZATV
 # index -> INDEX | MOD IME
