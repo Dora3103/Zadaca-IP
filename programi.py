@@ -122,5 +122,23 @@ for (i = 0; i < length(_A); i++) {
         printout(_A[%i])
 }
 '''
-#prog3 = P(qsis)
-#prog3.izvrši()
+progqsis = P(qsis)
+progqsis.izvrši()
+
+ulaz3 = '''
+$s = currentTime()
+~str = (str) $s sat = (num) $s _s = (list) $s
+printout('trenutno je' ; $s; 'sati'; 'stringovski je to' ; ~str ;', brojčano je to' ; sat; ', a u listi je to' ; _s)
+~broj = '23.16' broj = (num) ~broj _b = (list) broj
+printout('broj u stringu je ' ; ~broj ; ', numerički je to ' ; broj; ', a u listi je to ' ; _b)
+_lista = ['nela', 12, 06:57] printout(_lista)
+~ime = _lista[%0]
+godine = _lista[%1]
+$sat = _lista[%2]
+printout('elementi liste su ' ~ime ; godine ; $sat)
+
+
+'''
+
+prog3 = P(ulaz3)
+prog3.izvrši()
