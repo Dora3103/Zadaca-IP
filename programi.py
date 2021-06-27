@@ -126,7 +126,9 @@ for (i = 0; i < length(_A); i++) {
         printout(_A[%i])
 }
 '''
+#P.tokeniziraj(qsis)
 progqsis = P(qsis)
+#prikaz(progqsis)
 progqsis.izvrši()
 
 ulaz3 = '''
@@ -140,9 +142,11 @@ _lista = ['nela', 12, 06:57] printout(_lista)
 godine = _lista[%1]
 $sat = _lista[%2]
 printout('elementi liste su ' ~ime ; godine ; $sat)
-
+_lista[%(3-1)] = [1, 'dva', 03:00]
+printout('trenutna lista je ' ; _lista ; 'a njezina duljina je'; length(_lista))
 
 '''
-
+#P.tokeniziraj(ulaz3)
 prog3 = P(ulaz3)
+#prikaz(prog3)
 prog3.izvrši()
