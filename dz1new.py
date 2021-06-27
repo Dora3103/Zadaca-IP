@@ -222,6 +222,7 @@ def an(lex):
 # stopFeed -> stopFeed OOTV pas OZATV
 # refresh -> refresh
 # funkcija -> readtemp | isithere | ishungry
+# readtemp -> READTEMP
 # isithere -> isItHere OOTV pas OZATV
 # isHungry -> isHungry OOTV pas OZATV
 # alarm -> ALARM OOTV aritizraz OZATV
