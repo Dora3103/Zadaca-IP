@@ -9,6 +9,11 @@ temperatura=37.5 #temperatura zraka
 
 #aktuatori
 alarm = False # je li upaljen alarm
+klima = 0 # promjena temperature u sekundi
+trazim = [] #koga trazim, od kada
+hranim = [] #koga hranim, od kada
+
+zadnja_provjera=datetime.now().timestamp()
 
 N = "'"
 
@@ -21,7 +26,7 @@ class T(TipoviTokena):
     NEG, KONJ, DISJ = '!&|'
     MOD = '%'
     NUM, LOG, LIST, STR = 'num', 'log', 'list', 'str'
-    ALARM = 'alarm' #naredbe za aktuatore
+    ALARM, CONDCHN, DOGSEARCH, FEED, STOPSEARCH, STOPFEED, REFRESH = 'alarm', 'condChn', 'dogSearch', 'feed', 'stopSearch', 'stopFeed', 'refresh' #naredbe za aktuatore, condChn mijenja klimu, refresh osvježava senzore
     ISITHERE, READTEMP, ISHUNGRY =  'isItHere', 'readTemp', 'isHungry' #funkcije za očitavanja stanja okoline
     PRINTOUT, LENGTH = 'printout', 'length'
     CURRENTTIME = 'currentTime'
@@ -203,7 +208,12 @@ def an(lex):
 ##funkcije i naredbe
 # ispis -> PRINTOUT OOTV printizraz TOČKAZ printizraz OZATV
 # printizraz -> lista | logizraz | '' | sat | string | aritizraz 
-# instrukcija -> alarm | -- ovo dovrsiti
+# condChn | condChn OOTV aritizraz OZATV
+# dogSearch | dogSearch OOTV pas OZATV
+# feed | feed OOTV pas OZATV
+# stopSearch | stopSearch OOTV pas OZATV
+# stopFeed | stopFeed OOTV pas OZATV
+# refresh | refresh
 # funkcija -> readtemp | isithere | ishungry
 # isithere -> isItHere OOTV pas OZATV
 # isHungry -> isHungry OOTV pas OZATV
@@ -227,6 +237,12 @@ class P(Parser):
             return br
         elif self > T.PRINTOUT: return self.ispis()
         elif self > T.ALARM: return self.alarm()
+        elif self > T.CONDCHN: return self.condChn()
+        elif self > T.DOGSEARCH: return self.dogSearch()
+        elif self > T.FEED: return self.feed()
+        elif self > T.STOPSEARCH: return self.stopSearch()
+        elif self > T.STOPFEED: return self.stopFeed()
+        elif self > T.REFRESH: return self.refresh()
         elif ime := self >= T.IME:
             if self >= T.PLUSP: return PPlus(ime)
             elif self >= T.PLUSJ: return PlusJ(ime, self.aritizraz())
@@ -300,7 +316,7 @@ class P(Parser):
         elif ime ^ T.PAS: return self.pas()
         else: assert False, f'Nepoznat tip od {ime}'
 
-    def funkcija(self):
+    def isItHere(self):
         if self >= T.ISITHERE:
             self >> T.OOTV
             if lista := self >= T.PAS:
@@ -310,7 +326,9 @@ class P(Parser):
                 self >> T.UZATV
             else: pas = self.string()
             self >> T.OZATV
-            return isItHere(pas)
+            return IsItHere(pas)
+
+    def isHungry(self):
         if self >= T.ISHUNGRY:
             self >> T.OOTV
             if lista := self >= T.PAS:
@@ -320,10 +338,73 @@ class P(Parser):
                 self >> T.UZATV
             else: pas = self.string()
             self >> T.OZATV
-            return isHungry(pas)
-        if self >= T.READTEMP:
-            return readTemp()
-    
+            return IsHungry(pas)
+
+    def alarm(self):
+        if self >= T.ALARM:
+            self >> T.OOTV
+            sekunde = self.aritizraz()
+            self >> T.OZATV
+            return Alarm(sekunde)
+
+    def condChn(self):
+        if self >= T.CONDCHN:
+            self >> T.OOTV
+            snaga = self.aritizraz()
+            self >> T.OZATV
+            return CondChn(snaga)
+
+    def dogSearch(self):
+        if self >= T.DOGSEARCH:
+            self >> T.OOTV
+            if lista := self >= T.PAS:
+                self >> T.UOTV
+                index = self.index()
+                pas = Index(lista, index)
+                self >> T.UZATV
+            else: pas = self.string()
+            self >> T.OZATV
+            return DogSearch(pas)
+
+    def feed(self):
+        if self >= T.FEED:
+            self >> T.OOTV
+            if lista := self >= T.PAS:
+                self >> T.UOTV
+                index = self.index()
+                pas = Index(lista, index)
+                self >> T.UZATV
+            else: pas = self.string()
+            self >> T.OZATV
+            return Feed(pas)
+
+    def stopSearch(self):
+        if self >= T.STOPSEARCH:
+            self >> T.OOTV
+            if lista := self >= T.PAS:
+                self >> T.UOTV
+                index = self.index()
+                pas = Index(lista, index)
+                self >> T.UZATV
+            else: pas = self.string()
+            self >> T.OZATV
+            return StopSearch(pas)
+
+    def stopFeed(self):
+        if self >= T.STOPFEED:
+            self >> T.OOTV
+            if lista := self >= T.PAS:
+                self >> T.UOTV
+                index = self.index()
+                pas = Index(lista, index)
+                self >> T.UZATV
+            else: pas = self.string()
+            self >> T.OZATV
+            return StopFeed(pas)
+
+    def refresh(self):
+        if self >= T.REFRESH:
+            return Refresh()
 
     def relacija(self):
         return self >> {T.MANJEJ, T.MANJE, T.VEĆE, T.VEĆEJ, T.JJEDNAKO, T.RAZLIČITO}
@@ -381,7 +462,7 @@ class P(Parser):
             return Duljina(item)
         elif self >= T.READTEMP:
             self.tokena_parsirano += 1
-            return readTemp()
+            return ReadTemp()
         else: 
             trenutni = self >> {T.BROJ, T.IME}
             self.tokena_parsirano += 1
@@ -410,7 +491,8 @@ class P(Parser):
             if self > T.LOG:
                 return self.cast()
         elif self > {T.STRIME, T.STRING}: return Usporedba(self.string(), self.relacija(), self.string())
-        elif self > {T.ISITHERE, T.ISHUNGRY}: return self.funkcija()
+        elif self > T.ISITHERE: return self.isItHere()
+        elif self > T.ISHUNGRY: return self.isHungry()
         else: return Usporedba(self.aritizraz(), self.relacija(), self.aritizraz())
 
     def cast(self):
@@ -507,13 +589,6 @@ class P(Parser):
             while not self > T.OZATV: izrazi.append(self.printizraz())
             self >> T.OZATV
             return Ispis(izrazi)
-
-    def alarm(self):
-        if self >= T.ALARM:
-            self >> T.OOTV
-            sekunde = self.aritizraz()
-            self >> T.OZATV
-            return Alarm(sekunde)
 
     tokena_parsirano = 0
     def printizraz(self):
@@ -672,15 +747,15 @@ class Usporedba(AST('lijevo relacija desno')):
         elif self.relacija ^ T.RAZLIČITO: return l != d
         else: assert False, f'Nepoznata relacija {self.relacija}'
 
-class isItHere(AST('pas')):
+class IsItHere(AST('pas')):
     def vrijednost(self, mem):
         return okolina[self.pas.vrijednost(mem)]
 
-class isHungry(AST('pas')):
+class IsHungry(AST('pas')):
     def vrijednost(self, mem):
         return glad[self.pas.vrijednost(mem)]
 
-class readTemp(AST('')):
+class ReadTemp(AST('')):
     def vrijednost(self, mem):
         return temperatura
 
@@ -728,8 +803,90 @@ class Alarm(AST('sekunde')):
         print('Gasim alarm!')
         alarm= False
         
+class CondChn(AST('snaga')):
+    def izvrši(self,mem):
+        global klima
+        klima=self.snaga.vrijednost(mem)
+        rijec = 'hladi' if klima<0 else 'grije'
+        print('Mijenjam klimu da',rijec,abs(klima),'stupnjeva u sekundi.')
 
-        
+class DogSearch(AST('pas')):
+    def izvrši(self,mem):
+        global trazim
+        tpas=self.pas.vrijednost(mem)
+        for a in trazim:
+            if tpas==a[0]:
+                print('Vec trazim tog psa!')
+                return
+        if okolina[tpas]:
+            print('Taj pas je prisutan')
+            return
+        trazim.append([tpas, datetime.now().timestamp()])
+        print('Pocinjem traziti',tpas,'!')
+
+class Feed(AST('pas')):
+    def izvrši(self,mem):
+        global hranim
+        hpas=self.pas.vrijednost(mem)
+        for a in hranim:
+            if hpas==a[0]:
+                print('Vec hranim tog psa!')
+                return
+        if not glad[hpas]: 
+            print('Taj pas nije gladan!')
+            return
+        hranim.append([hpas, datetime.now().timestamp()])
+        print('Pocinjem hraniti',hpas,'!')
+
+
+class StopSearch(AST('pas')):
+    def izvrši(self,mem):
+        global trazim
+        tpas=self.pas.vrijednost(mem)
+        i=-1
+        for a in trazim:
+            i+=1
+            if tpas==a[0]:
+                trazim.pop(i)
+                print('Prestajem traziti',tpas,'!')
+                return
+        print('Ne trazim tog psa!')
+
+class StopFeed(AST('pas')):
+    def izvrši(self,mem):
+        global hranim
+        hpas=self.pas.vrijednost(mem)
+        i=-1
+        for a in hranim:
+            i+=1
+            if hpas==a[0]:
+                hranim.pop(i)
+                print('Prestajem hraniti',hpas,'!')
+                return
+        print('Ne hranim tog psa!')
+
+class Refresh(AST('')): #ova funkcija je simulacija osvjezavanja senzora, prava funkcija bi jako ovisila o samom hardveru, i nebi radila ove izracune
+    def izvrši(self,mem):
+        global okolina, glad, trazim, hranim, temperatura
+        vrijeme=datetime.now().timestamp()
+        i=-1
+        for a in trazim:
+            i+=1
+            if a[1]+20<vrijeme and not okolina[a[0]]:
+                print('Pronašao sam',a[0],'!')
+                okolina[a[0]]=True
+                trazim.pop(i)
+        i=-1
+        for a in hranim:
+            i+=1
+            if a[1]+5<vrijeme and glad[a[0]]:
+                print('Nahranio sam',a[0],'!')
+                glad[a[0]]=False
+                hranim.pop(i)
+        temperatura+=(vrijeme-zadnja_provjera)*klima
+
+
+
 #ulaz = '#asdasd#'
 #ulaz = '!(P5&!!(P6 | P9))'
 #ulaz = '123456, 456'
@@ -792,7 +949,100 @@ ulaz7 = '''_dog = ['Fifi', 'Rex', 'Kokos']
             }
 '''
 ulaz9 = "printout((num)'15.2')"
-prog2 = P(ulaz9)
+ulaz10 = '''printout(readTemp)
+    condChn(0.01)
+    alarm(4)
+    refresh
+    printout(readTemp)
+    dogSearch('Fifi')
+    feed('Kokos')
+    feed('Fifi')
+    stopFeed('Fifi')
+    feed('Fifi')
+    alarm(6)
+    refresh
+    printout(isHungry('Fifi'))
+'''
+qsis='''
+_A = [39,17,89,67,10,39,45,67,50,65,58,9,66,51,6,16,94,68,75,94,74,33,58,61,40,76,3,6,37,8,64,98]
+l = 0
+h = length(_A) - 1
+_stack = _A #radi li?, zapravo mi je samo bitno da mi je stack velik ko i lista#
+top = 0
+_stack[%top] = l
+top++
+_stack[%top] = h
+while(top >= 0) {
+        h = _stack[%top]
+        top--
+        l = _stack[%top]
+
+        x = _A[%h]
+        i = l-1
+        for (j = l; j <= h-1; j++) {
+                if (_A[%j] <= x) {
+                        i++
+                        temp = _A[%i]
+                        _A[%i] = _A[%j]
+                        _A[%j] = temp
+                }
+        }
+        i++
+        temp = _A[%i]
+        _A[%i] = _A[%h]
+        _A[%h] = temp
+
+        #i je pivot#
+
+        if ((i-1 > l) & (i-1-l>6)) { #lijevo od pivota#
+                top++
+                _stack[%top] = l
+                top++
+                _stack[%top] = i-1
+        }
+
+        if ((i-1 > l) & (i-1-l<=6)) {
+                start = l
+                end = i-1
+                for (x = start + 1; x < end; x++) {
+                        val = _A[%x]
+                        for (j = x-1; (j >= 0) & (val < list[j]); j--) {
+                                pos = j+1
+                                _A[%pos] = _A[%j]
+                        }
+                        pos=j+1
+                        _A[%pos] = val
+                }
+        }
+
+        if ((i+1 < h) & (h-i-1>6)) { #desno od pivota#
+                top++
+                _stack[%top] = i + 1
+                top++
+                _stack[%top] = h
+        }
+
+        if ((i-1 > l) & (i-1-l<=6)) {
+                start = i+1
+                end = h
+                for (x = start + 1; x < end; x++) {
+                        val = _A[%x]
+                        for (j = x-1; (j >= 0) & (val < list[j]); j--) {
+                                pos = j+1
+                                _A[%pos] = _A[%j]
+                        }
+                        pos=j+1
+                        _A[%pos] = val
+                }
+        }
+
+
+}
+for (i = 0; i < n; i++) {
+        printout(_A[%i]
+}
+'''
+prog2 = P(ulaz10)
 #prikaz(prog2)
 prog2.izvrši()
 #print(x for x in mem_okol)
