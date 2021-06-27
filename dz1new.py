@@ -577,7 +577,7 @@ class P(Parser):
     def element(self):
         if self > T.UOTV: return self.lista()
         elif self > T.STRING: return self.string()
-        elif self > T.SBROJ: return self.sat()
+        elif self > {T.SBROJ, T.MBROJ} : return self.sat()
         else: return self.aritizraz()
     
     def pas(self):
