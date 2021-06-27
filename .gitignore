@@ -1,3 +1,4 @@
 vepar.py
 __pycache__/*
+linux_script/__pycache__/*
 !linux_script/vepar.py
