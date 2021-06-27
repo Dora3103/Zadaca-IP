@@ -22,8 +22,9 @@ _dog = ['Fifi', 'Kokos', 'Rex']
 
 '''
 
-
+#P.tokeniziraj(ulaz1)
 prog1 = P(ulaz1)
+#prikaz(prog1)
 prog1.izvrši()
 
 ulaz2 = '''
@@ -43,7 +44,10 @@ printout(readTemp) #citam temperaturu, postavim klimu na +0.01, čekam 4 sekunde
     printout(isHungry('Fifi'))
 
 '''
+
+#P.tokeniziraj(ulaz2)
 prog2 = P(ulaz2)
+#prikaz(prog2)
 prog2.izvrši()
 
 qsis='''
