@@ -175,7 +175,7 @@ def an(lex):
 ### BKG:
 # start -> naredba naredbe
 # naredbe -> '' | naredba naredbe
-# naredba -> petlja | if | BREAK TOČKAZAREZ | pridruži | instrukcija | IME PLUSP 
+# naredba -> petlja | if | BREAK TOČKAZAREZ | pridruži | condChn  | dogSearch | feed | stopSearch | stopFeed | refresh | ispis | IME PLUSP | funkcija | alarm | pas | index !!!
 # petlja -> while naredba | for naredba | while VOTV naredbe VZATV | for VOTV naredbe VZATV
 # for -> FOR OOTV IME# JEDNAKO BROJ TOČKAZ IME# MANJE BROJ TOČKAZ IME# inkrement OZATV
 # inkrement -> PLUSP | PLUSJ BROJ
@@ -215,12 +215,12 @@ def an(lex):
 ##funkcije i naredbe
 # ispis -> PRINTOUT OOTV printizraz TOČKAZ printizraz OZATV
 # printizraz -> lista | logizraz | '' | sat | string | aritizraz 
-# condChn | condChn OOTV aritizraz OZATV
-# dogSearch | dogSearch OOTV pas OZATV
-# feed | feed OOTV pas OZATV
-# stopSearch | stopSearch OOTV pas OZATV
-# stopFeed | stopFeed OOTV pas OZATV
-# refresh | refresh
+# condChn -> condChn OOTV aritizraz OZATV
+# dogSearch -> dogSearch OOTV pas OZATV
+# feed -> feed OOTV pas OZATV
+# stopSearch -> stopSearch OOTV pas OZATV
+# stopFeed -> stopFeed OOTV pas OZATV
+# refresh -> refresh
 # funkcija -> readtemp | isithere | ishungry
 # isithere -> isItHere OOTV pas OZATV
 # isHungry -> isHungry OOTV pas OZATV
