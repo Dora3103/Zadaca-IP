@@ -175,16 +175,14 @@ def an(lex):
 ### BKG:
 # start -> naredba naredbe
 # naredbe -> '' | naredba naredbe
-# naredba -> petlja | if | BREAK TOČKAZAREZ | pridruži | instrukcija | IME PLUSP 
+# naredba -> petlja | if | BREAK TOČKAZAREZ | pridruži | condChn  | dogSearch | feed | stopSearch | stopFeed | refresh | ispis | alarm | IME inkr/dekr
 # petlja -> while naredba | for naredba | while VOTV naredbe VZATV | for VOTV naredbe VZATV
-# for -> FOR OOTV IME# JEDNAKO BROJ TOČKAZ IME# MANJE BROJ TOČKAZ IME# inkrement OZATV
-# inkrement -> PLUSP | PLUSJ BROJ
-# if -> IF OOTV uvjet OZATV VOTV naredbe VZATV
-# while -> WHILE OOTV uvjet OZATV
+# for -> FOR OOTV pridruži TOĆKAZ logizraz TOČKAZ IME inkr/dekr
+# inkr/dekr -> PLUSP | PLUSJ aritizraz | MINUSM | MINUSJ arititraz | PUTAJ aritizraz | KROZJ aritizraz 
+# if -> IF OOTV logizraz OZATV VOTV naredbe VZATV
+# while -> WHILE OOTV logizraz OZATV
 
-# uvjet -> formula | OOTV aritizraz OZATV relacija OOTV aritizraz OZATV | sat relacija sat | IME relacija aritizraz
-
-# pridruži -> IME JEDNAKO aritizraz | LIME JEDNAKO liste | PVAR JEDNAKO logizraz | SIME JEDNAKO sat | STRIME JEDNAKO string | LIME UOTV index UZATV izraz
+# pridruži -> IME JEDNAKO aritizraz | LIME JEDNAKO liste | PVAR JEDNAKO logizraz | SIME JEDNAKO sat | STRIME JEDNAKO string | LIME UOTV index UZATV izraz | 
 
 ## tipovi podataka
 # aritizraz -> aritizraz PLUS član | aritizraz MINUS član | član 
@@ -217,15 +215,16 @@ def an(lex):
 ##funkcije i naredbe
 # ispis -> PRINTOUT OOTV printizraz TOČKAZ printizraz OZATV
 # printizraz -> lista | logizraz | '' | sat | string | aritizraz 
-# condChn | condChn OOTV aritizraz OZATV
-# dogSearch | dogSearch OOTV pas OZATV
-# feed | feed OOTV pas OZATV
-# stopSearch | stopSearch OOTV pas OZATV
-# stopFeed | stopFeed OOTV pas OZATV
-# refresh | refresh
+# condChn -> condChn OOTV aritizraz OZATV
+# dogSearch -> dogSearch OOTV pas OZATV
+# feed -> feed OOTV pas OZATV
+# stopSearch -> stopSearch OOTV pas OZATV
+# stopFeed -> stopFeed OOTV pas OZATV
+# refresh -> refresh
 # funkcija -> readtemp | isithere | ishungry
+# readtemp -> READTEMP
 # isithere -> isItHere OOTV pas OZATV
-# isHungry -> isHungry OOTV pas OZATV
+# ishungry -> isHungry OOTV pas OZATV
 # alarm -> ALARM OOTV aritizraz OZATV
 # pas -> string | PAS UOTV index UZATV
 # index -> INDEX | MOD IME
@@ -329,7 +328,6 @@ class P(Parser):
     def grananje(self): #if
         self >> T.IF, self >> T.OOTV
         uvjet = self.logizraz()
-        #print(uvjet)
         self >> T.OZATV
         
         if self >= T.VOTV:
@@ -499,8 +497,6 @@ class P(Parser):
             ind = self.index()
             self >> T.UZATV 
             trenutni = Index(lista, ind)
-            #print(trenutni)
-            #if not trenutni is float: raise SintaksnaGreška('Baza smije biti samo broj')
         else: 
             trenutni = self >> {T.BROJ, T.IME}
             self.tokena_parsirano += 1
@@ -603,18 +599,11 @@ class P(Parser):
             self >> T.OOTV
             self >> T.OZATV
             return currentTime()
-        elif self > T.SIME: 
-            sat = self >> T.SIME
-            if self > {T.MANJE, T.MANJEJ, T.JJEDNAKO, T.RAZLIČITO, T.VEĆEJ, T.VEĆE}:
-                return Usporedba(sat, self.relacija(), self.sat())
-            else: return sat
+        elif self > T.SIME: return self >> T.SIME
         h = self >> {T.SBROJ, T.MBROJ}
         self >> T.DVOTOČKA
         min = self >> {T.BROJ, T.MBROJ}
-
-        if self > {T.MANJE}:
-            return Usporedba(Sat(h,min), self.relacija(), self.sat())
-        else: return Sat(h, min)
+        return Sat(h, min)
     
     def string(self):
         if self >= T.OOTV:
@@ -967,5 +956,3 @@ class Refresh(AST('')): #ova funkcija je simulacija osvjezavanja senzora, prava 
                 hranim.pop(i)
         temperatura+=(vrijeme-zadnja_provjera)*klima
         zadnja_provjera=vrijeme
-
-

@@ -599,18 +599,11 @@ class P(Parser):
             self >> T.OOTV
             self >> T.OZATV
             return currentTime()
-        elif self > T.SIME: 
-            sat = self >> T.SIME
-            if self > {T.MANJE, T.MANJEJ, T.JJEDNAKO, T.RAZLIČITO, T.VEĆEJ, T.VEĆE}:
-                return Usporedba(sat, self.relacija(), self.sat())
-            else: return sat
+        elif self > T.SIME: return self >> T.SIME
         h = self >> {T.SBROJ, T.MBROJ}
         self >> T.DVOTOČKA
         min = self >> {T.BROJ, T.MBROJ}
-
-        if self > {T.MANJE}:
-            return Usporedba(Sat(h,min), self.relacija(), self.sat())
-        else: return Sat(h, min)
+        return Sat(h, min)
     
     def string(self):
         if self >= T.OOTV:
@@ -1124,6 +1117,6 @@ ulaz11 = "$s = currentTime() sat = (num) $s printout(sat)"
 
 prog2 = P(qsis)
 #prikaz(prog2)
-prog2.izvrši()
+#prog2.izvrši()
 #print(x for x in mem_okol)
 #P.tokeniziraj(qsis)
