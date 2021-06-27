@@ -1,0 +1,6 @@
+_dog = ['Fifi', 'Rex', 'Kokos']
+for( i = 0; i < length(_dog); i++){
+	if( !isItHere(_dog[%i]) ){
+		printout(_dog[%i]; 'is gone!' )
+        }
+}

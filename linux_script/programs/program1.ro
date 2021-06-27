@@ -1,0 +1,10 @@
+_A=[1,'banana',3,'jabuka']
+for(i = 0; i < 15; i++) {
+   j = i
+   # printout(i; j)#
+   while(j < 10){
+        j++
+        printout(i; j; readTemp; isItHere('Fifi'); isHungry('Kokos'))
+        alarm(4)
+   }
+}

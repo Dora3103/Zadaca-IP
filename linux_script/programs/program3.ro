@@ -1,0 +1,8 @@
+i = 0
+while(yes){
+	if( i > 5 ){
+        	break;
+       	}
+        i++
+}
+printout(i)

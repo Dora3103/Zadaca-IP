@@ -1,0 +1,14 @@
+printout(readTemp) #citam temperaturu, postavim klimu na +0.01, čekam 4 sekunde, pokrecem senzore, citam ponovo - mora biti promijene# 
+condChn(0.01)
+alarm(4)
+refresh
+printout(readTemp)
+dogSearch('Fifi') #trazim fifi, ali je tu#
+feed('Kokos') #hranim kokos, ali je sit#
+feed('Fifi') #hranim fifi#
+stopFeed('Fifi') #prestajem hraniti fifi#
+feed('Rex') #taj pas ne postoji#
+feed('Fifi') #opet hranim fifi#
+alarm(6) #čekam 6 sekundi#
+refresh #fifi je sada sita#
+printout(isHungry('Fifi'))
