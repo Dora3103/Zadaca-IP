@@ -881,13 +881,13 @@ class DogSearch(AST('pas')):
         tpas=self.pas.vrijednost(mem)
         for a in trazim:
             if tpas==a[0]:
-                print('Vec trazim tog psa!')
+                print('Vec trazim', tpas, '!')
                 return
         if tpas not in okolina:
             print('Psa',tpas,'nemam zapisano')
             return
         if okolina[tpas]:
-            print('Taj pas je prisutan')
+            print(tpas, 'je prisutan')
             return
         trazim.append([tpas, datetime.now().timestamp()])
         print('Pocinjem traziti',tpas,'!')
@@ -898,13 +898,13 @@ class Feed(AST('pas')):
         hpas=self.pas.vrijednost(mem)
         for a in hranim:
             if hpas==a[0]:
-                print('Vec hranim tog psa!')
+                print('Vec hranim', hpas, '!')
                 return
         if hpas not in glad:
             print('Psa',hpas,'nemam zapisano')
             return
         if not glad[hpas]: 
-            print('Taj pas nije gladan!')
+            print(hpas, 'nije gladan!')
             return
         hranim.append([hpas, datetime.now().timestamp()])
         print('Pocinjem hraniti',hpas,'!')
@@ -921,7 +921,7 @@ class StopSearch(AST('pas')):
                 trazim.pop(i)
                 print('Prestajem traziti',tpas,'!')
                 return
-        print('Ne trazim tog psa!')
+        print('Ne trazim', tpas, '!')
 
 class StopFeed(AST('pas')):
     def izvrši(self,mem):
@@ -934,7 +934,7 @@ class StopFeed(AST('pas')):
                 hranim.pop(i)
                 print('Prestajem hraniti',hpas,'!')
                 return
-        print('Ne hranim tog psa!')
+        print('Ne hranim', hpas, '!')
 
 class Refresh(AST('')): #ova funkcija je simulacija osvjezavanja senzora, prava funkcija bi jako ovisila o samom hardveru, i nebi radila ove izracune
     def izvrši(self,mem):
